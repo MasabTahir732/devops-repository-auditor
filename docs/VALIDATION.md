@@ -17,6 +17,8 @@ The exact installed versions are recorded in the runtime and development lock fi
 | Target execution | No target dependencies installed, scripts run, tests run, or checkout performed |
 | Temporary clone cleanup | Confirmed removed after inspection |
 | `.env` ignore rule | `git check-ignore .env` returned `.env` |
+| Public project publication | Six component commits pushed to `MasabTahir732/devops-repository-auditor` |
+| Hosted CI | All four Linux/Windows and Python 3.11/3.14 jobs passed for implementation commit `845ab1f`; [run 40117376441](https://github.com/MasabTahir732/devops-repository-auditor/actions/runs/40117376441) |
 
 Tests cover real local Git objects, symlink/submodule exclusion, empty repositories,
 timeouts, pagination, search limits, snapshot consistency, malformed requests,
@@ -35,8 +37,7 @@ These remain unverified:
 - Authentication, quota, model access and an actual model/tool audit using the user's API account.
 - The required authentic sample report and companion tool trace.
 - Detection precision and recall from real model outputs, including false positives on healthy repositories.
-- Hosted GitHub Actions on its Linux/Windows and Python 3.11/3.14 matrix.
-- Public GitHub publication and course submission.
+- Course submission of the public GitHub URL.
 
 The authored fixture expectations are development examples, not instructor hidden answers.
 Passing application tests does not establish hidden-test accuracy or guarantee a grade.
