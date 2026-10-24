@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "devops-repository-auditor"
+version = "1.0.0"
+description = "An evidence-oriented DevOps auditing agent with a plain Python tool loop"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["openai>=2.0,<3", "python-dotenv>=1.0,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "build>=1,<2"]
+
+[project.scripts]
+devops-audit = "agent:main"
+
+[tool.setuptools]
+py-modules = ["agent", "agent_loop", "config", "llm_client", "prompts", "reporting", "repository", "safety", "tools", "tracing"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["fixtures", ".venv"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]

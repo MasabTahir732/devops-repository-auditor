@@ -1,0 +1,19 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.env
+.env.*
+!.env.example
+reports/
+*.trace.jsonl
+report.json
+evaluation-results.json
+# sample_report.json is deliberately not ignored: submit a real run's output.
