@@ -1,0 +1,2 @@
+Flask
+pytest==8.3.5

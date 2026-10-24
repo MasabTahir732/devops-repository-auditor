@@ -1,0 +1,55 @@
+{
+  "fixture": "obvious-defects",
+  "description": "Independently authored expected baseline. Adjudicate additional valid defects instead of silently changing expectations to fit model output.",
+  "findings": [
+    {
+      "id": "DEP-UNPINNED",
+      "category": "dependency management",
+      "file": "requirements.txt",
+      "line": 1,
+      "keywords": ["unpinned", "pin", "version", "constraint"],
+      "notes": "Flask has no version constraint or lock resolution. Inspect the actual requirement."
+    },
+    {
+      "id": "CONFIG-DEBUG",
+      "category": "configuration",
+      "file": "config.py",
+      "line": 3,
+      "keywords": ["debug"],
+      "notes": "README and module docstring establish that this is production configuration."
+    },
+    {
+      "id": "CONFIG-MACHINE-PATH",
+      "category": "configuration",
+      "file": "config.py",
+      "line": 4,
+      "keywords": ["path", "directory", "portable"],
+      "notes": "An absolute developer Windows path cannot serve as portable deployment configuration."
+    },
+    {
+      "id": "CI-NONBLOCKING-TESTS",
+      "category": "ci",
+      "file": ".github/workflows/ci.yml",
+      "line": 15,
+      "line_tolerance": 1,
+      "keywords": ["continue-on-error", "nonblocking", "failure", "failures"],
+      "notes": "The test step explicitly permits failure; the workflow can pass with failing tests."
+    },
+    {
+      "id": "BUILD-MOVING-IMAGE",
+      "category": "build and release",
+      "file": "Dockerfile",
+      "line": 1,
+      "keywords": ["latest", "pin", "digest", "reproduc"],
+      "notes": "python:latest changes over time and does not fix the declared Python version."
+    },
+    {
+      "id": "DEPLOY-DEVELOPMENT-SERVER",
+      "category": "build and release",
+      "file": "Dockerfile",
+      "line": 8,
+      "keywords": ["development", "wsgi", "production", "flask run"],
+      "notes": "The declared production deployment launches Flask's development server."
+    }
+  ]
+}

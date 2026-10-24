@@ -1,0 +1,32 @@
+{
+  "fixture": "subtle-defects",
+  "description": "Findings require reading multiple files or understanding boolean parsing; file existence alone is insufficient.",
+  "findings": [
+    {
+      "id": "SEC-PR-TARGET-UNTRUSTED-CODE",
+      "category": "security",
+      "file": ".github/workflows/ci.yml",
+      "line": 13,
+      "line_tolerance": 3,
+      "keywords": ["pull_request_target", "untrusted", "attacker", "privileged"],
+      "notes": "pull_request_target plus contents:write checks out the PR head and installs it, allowing untrusted build code to run with a privileged token. Cite the whole chain."
+    },
+    {
+      "id": "CI-MISSING-TEST-EXTRA",
+      "category": "ci",
+      "file": ".github/workflows/ci.yml",
+      "line": 17,
+      "line_tolerance": 1,
+      "keywords": ["pytest", "extra", "development", "[dev]"],
+      "notes": "pytest exists only in pyproject.toml's dev extra, but CI installs the package without that extra."
+    },
+    {
+      "id": "CONFIG-STRING-BOOLEAN",
+      "category": "configuration",
+      "file": "src/service_config/__init__.py",
+      "line": 4,
+      "keywords": ["bool", "nonempty", "non-empty", "false", "truth"],
+      "notes": "bool('false') is True, so DEBUG defaults to enabled despite the environment example and README."
+    }
+  ]
+}

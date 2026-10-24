@@ -1,0 +1,5 @@
+{
+  "fixture": "healthy",
+  "description": "Healthy for its small dependency-free library scope; absent requirements.txt, Dockerfile, deployment, and release workflow are not defects.",
+  "findings": []
+}
