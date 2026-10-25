@@ -20,6 +20,35 @@ def _reject_constant(value: str):
     raise ValueError("Non-finite JSON constants are forbidden.")
 
 
+def model_tool_output(result: dict) -> str:
+    """Keep every returned source line while avoiding repeated per-line JSON keys.
+
+    The trace retains the full structured result. The model receives the same
+    redacted source and original line numbers in a more compact representation.
+    """
+    lines = result.get("lines")
+    if (
+        isinstance(lines, list)
+        and lines
+        and all(
+            isinstance(line, dict)
+            and type(line.get("line")) is int
+            and isinstance(line.get("text"), str)
+            for line in lines
+        )
+    ):
+        result = {
+            **result,
+            "lines": [
+                f"{line['line']}: {line['text']}"
+                + (" [line truncated]" if line.get("truncated") else "")
+                for line in lines
+            ],
+            "lines_format": "original line number: redacted source text",
+        }
+    return json.dumps(result, ensure_ascii=True, allow_nan=False, separators=(",", ":"))
+
+
 def run_audit(
     repository: str, tools, client, *, max_steps: int = 40, trace: Trace | None = None
 ) -> dict:
@@ -125,7 +154,7 @@ def run_audit(
                 {
                     "type": "function_call_output",
                     "call_id": call.call_id,
-                    "output": json.dumps(result, ensure_ascii=True, allow_nan=False),
+                    "output": model_tool_output(result),
                 }
             )
         if step == max_steps - 3:

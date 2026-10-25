@@ -130,6 +130,45 @@ def test_incomplete_output_is_a_failure():
         client.respond([], [SCHEMA])
 
 
+def test_groq_request_budget_reduction_preserves_evidence():
+    requests = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        if body["max_tokens"] > 1024:
+            return httpx.Response(413, json={"error": {"message": "Request too large"}})
+        return httpx.Response(200, json=chat_response())
+
+    client = mock_client(
+        CompatibleClient("wire-test-key-1234", "test-model", "groq"),
+        handler,
+        CompatibleClient.ENDPOINTS["groq"],
+    )
+    messages = [{"role": "user", "content": "Evidence remains unchanged"}]
+    assert client.respond(messages, [SCHEMA]).calls[0].name == "list_files"
+    assert [request["max_tokens"] for request in requests] == [4096, 2048, 1024]
+    assert all(request["messages"] == messages for request in requests)
+    assert all(request["tools"] == requests[0]["tools"] for request in requests)
+
+
+def test_groq_oversized_request_retries_are_bounded():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(413, json={"error": {"message": "Request too large"}})
+
+    client = mock_client(
+        CompatibleClient("wire-test-key-1234", "test-model", "groq"),
+        handler,
+        CompatibleClient.ENDPOINTS["groq"],
+    )
+    with pytest.raises(LLMError, match="HTTP 413"):
+        client.respond([], [SCHEMA])
+    assert len(requests) == 3
+
+
 def test_openai_responses_wire_format_keeps_full_output_items():
     captured = []
 

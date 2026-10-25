@@ -136,14 +136,26 @@ class CompatibleClient:
             for tool in tools
         ]
         try:
-            response = self._client.chat.completions.create(
-                model=self.model,
-                messages=self.chat_messages(messages),
-                tools=chat_tools,
-                tool_choice="auto",
-                parallel_tool_calls=False,
-                max_tokens=4096 if self.provider == "groq" else 8192,
-            )
+            output_budget = 4096 if self.provider == "groq" else 8192
+            while True:
+                try:
+                    response = self._client.chat.completions.create(
+                        model=self.model,
+                        messages=self.chat_messages(messages),
+                        tools=chat_tools,
+                        tool_choice="auto",
+                        parallel_tool_calls=False,
+                        max_tokens=output_budget,
+                    )
+                    break
+                except api.APIStatusError as exc:
+                    # Some free accounts count the requested output allowance in
+                    # their request-size budget. Reduce that allowance, not the
+                    # evidence or tool schemas. At most two additional attempts.
+                    if self.provider == "groq" and exc.status_code == 413 and output_budget > 1024:
+                        output_budget //= 2
+                        continue
+                    raise
         except api.AuthenticationError as exc:
             raise LLMError(
                 f"LLM authentication failed; check {self.provider.upper()}_API_KEY locally."

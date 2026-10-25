@@ -12,6 +12,18 @@ from typing import Any
 
 REDACTED = "[REDACTED]"
 _KNOWN: set[str] = set()
+_USAGE_COUNTS = {
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "prompt_tokens",
+    "completion_tokens",
+    "reasoning_tokens",
+    "cached_tokens",
+    "audio_tokens",
+    "accepted_prediction_tokens",
+    "rejected_prediction_tokens",
+}
 _NAME = r"(?:[\w.-]*(?:api[_-]?key|secret|password|passwd|token|credential|private[_-]?key)[\w.-]*)"
 _ASSIGNMENT = re.compile(
     rf"(?im)(?P<prefix>[\"']?{_NAME}[\"']?\s*[:=]\s*)"
@@ -118,6 +130,7 @@ def redact(value: Any) -> Any:
                 re.fullmatch(_NAME, name, re.I)
                 and item is not None
                 and isinstance(item, (str, int, float))
+                and not (name in _USAGE_COUNTS and type(item) is int and item >= 0)
                 and not re.fullmatch(
                     r"(?:max_|input_|output_|total_)?tokens(?:_limit|_budget)?", name, re.I
                 )

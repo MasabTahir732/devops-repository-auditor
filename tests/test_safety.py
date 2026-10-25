@@ -74,6 +74,23 @@ def test_structured_credential_fields_are_redacted_without_hiding_usage_counts()
     assert result["output_tokens"] == 50
 
 
+def test_provider_usage_counters_stay_numeric_but_secrets_stay_hidden():
+    result = redact(
+        {
+            "prompt_tokens": 321,
+            "completion_tokens": 123,
+            "reasoning_tokens": 12,
+            "token": 12345678,
+            "prompt_tokens_override": "sensitive-value",
+        }
+    )
+    assert result["prompt_tokens"] == 321
+    assert result["completion_tokens"] == 123
+    assert result["reasoning_tokens"] == 12
+    assert result["token"] == REDACTED
+    assert result["prompt_tokens_override"] == REDACTED
+
+
 @pytest.mark.parametrize(
     "source",
     [

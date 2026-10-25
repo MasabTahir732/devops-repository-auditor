@@ -4,11 +4,31 @@ import json
 
 import pytest
 
-from agent_loop import AgentError, run_audit
+from agent_loop import AgentError, model_tool_output, run_audit
 from llm_client import ModelTurn, ToolCall
 from tracing import Trace
 
 URL = "https://github.com/example/project"
+
+
+def test_compact_model_output_preserves_source_numbers_and_truncation():
+    result = {
+        "ok": True,
+        "path": "app.py",
+        "lines": [
+            {"line": 17, "text": "DEBUG = True", "truncated": False},
+            {"line": 18, "text": "long source", "truncated": True},
+        ],
+        "truncated": True,
+        "next_start_line": 19,
+    }
+    serialized = model_tool_output(result)
+    compact = json.loads(serialized)
+    assert compact["lines"] == ["17: DEBUG = True", "18: long source [line truncated]"]
+    assert compact["next_start_line"] == 19
+    assert compact["truncated"] is True
+    assert result["lines"][0]["line"] == 17  # Full structured trace is not mutated.
+    assert len(serialized) < len(json.dumps(result)) + 70
 
 
 class MemoryTools:
