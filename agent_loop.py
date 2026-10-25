@@ -35,6 +35,30 @@ NOTE_TOOL = {
 MEMORY_PREFIX = "[AUDIT_MEMORY]"
 
 
+def checkpoint_schema(tool: dict) -> dict:
+    parameters = tool["parameters"]
+    return {
+        **tool,
+        "parameters": {
+            **parameters,
+            "properties": {
+                **parameters["properties"],
+                "audit_notes": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000,
+                    "description": (
+                        "Current concise evidence notebook: carry forward observed facts, "
+                        "candidate findings with exact paths/lines and remaining checks. "
+                        "Use 'Starting inspection' initially. No hidden reasoning."
+                    ),
+                },
+            },
+            "required": [*parameters["required"], "audit_notes"],
+        },
+    }
+
+
 def compact_messages(messages: list[dict], tools, notes: str, budget: int) -> list[dict]:
     """Retain policy, explicit inspection metadata/notebook and complete recent tool exchanges.
 
@@ -77,7 +101,7 @@ def compact_messages(messages: list[dict], tools, notes: str, budget: int) -> li
     for item in messages[2:]:
         if item.get("role") == "user" and str(item.get("content", "")).startswith(MEMORY_PREFIX):
             continue
-        if item.get("role") == "assistant" or not groups:
+        if item.get("role") == "assistant" or item.get("type") == "function_call" or not groups:
             groups.append([])
         groups[-1].append(item)
     kept = []
@@ -146,7 +170,11 @@ def run_audit(
             ),
         },
     ]
-    schemas = [*TOOL_SCHEMAS, NOTE_TOOL, REPORT_TOOL]
+    checkpointed = getattr(client, "provider", None) == "groq"
+    inspection_schemas = (
+        [checkpoint_schema(tool) for tool in TOOL_SCHEMAS] if checkpointed else TOOL_SCHEMAS
+    )
+    schemas = [*inspection_schemas, NOTE_TOOL, REPORT_TOOL]
     notes = ""
     repeated = Counter()
     successful_tools = 0
@@ -202,6 +230,32 @@ def run_audit(
             except (ValueError, TypeError, RecursionError):
                 result = {"ok": False, "error": "Invalid tool arguments; supply a JSON object."}
             else:
+                if checkpointed and call.name in {tool["name"] for tool in TOOL_SCHEMAS}:
+                    checkpoint = arguments.pop("audit_notes", None)
+                    if not isinstance(checkpoint, str) or not 1 <= len(checkpoint) <= 4000:
+                        result = {
+                            "ok": False,
+                            "error": (
+                                "Include audit_notes, a 1 to 4000 character evidence notebook, "
+                                "with this inspection request. Carry forward facts and unresolved findings."
+                            ),
+                        }
+                        trace.write(
+                            "tool_result",
+                            step=step,
+                            call_id=call.call_id,
+                            tool=call.name,
+                            result=result,
+                        )
+                        messages.append(
+                            {
+                                "type": "function_call_output",
+                                "call_id": call.call_id,
+                                "output": model_tool_output(result),
+                            }
+                        )
+                        continue
+                    notes = redact(checkpoint)
                 if call.name == "save_notes":
                     if (
                         set(arguments) != {"notes"}

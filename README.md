@@ -132,6 +132,10 @@ when older content is removed, the model receives an explicit memory notice, its
 notebook, and inspection metadata. The complete tool evidence remains in the trace,
 and exact source can be read again. Reads paginate at 100 lines, and model-facing
 source uses compact numbered text to reduce free-tier request sizes.
+Groq inspection requests also carry a required `audit_notes` checkpoint. The model
+updates this brief evidence notebook alongside its tool choice; Python removes
+the checkpoint before calling the read-only inspection function. This preserves
+observations across compaction without a separate note-taking API request.
 
 ## Audit scope
 

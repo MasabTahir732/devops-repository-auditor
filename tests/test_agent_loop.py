@@ -4,8 +4,9 @@ import json
 
 import pytest
 
-from agent_loop import AgentError, compact_messages, model_tool_output, run_audit
+from agent_loop import AgentError, checkpoint_schema, compact_messages, model_tool_output, run_audit
 from llm_client import ModelTurn, ToolCall
+from tools import TOOL_SCHEMAS
 from tracing import Trace
 
 URL = "https://github.com/example/project"
@@ -196,3 +197,96 @@ def test_unfit_recent_observation_fails_explicitly_instead_of_dropping_it():
     ]
     with pytest.raises(AgentError, match="latest observation"):
         compact_messages(messages, MemoryTools(), "", 2000)
+
+
+def test_groq_checkpoints_are_controller_metadata_not_inspection_arguments():
+    client = SequenceClient(
+        [
+            turn("list_files", {"audit_notes": "Starting inspection"}, 1),
+            turn(
+                "read_file",
+                {
+                    "path": "pyproject.toml",
+                    "audit_notes": "Found pyproject.toml; inspect dependencies.",
+                },
+                2,
+            ),
+            turn("submit_report", {"repository": URL, "violations": []}, 3),
+        ]
+    )
+    client.provider = "groq"
+    tools = MemoryTools()
+    assert run_audit(URL, tools, client, max_steps=4)["violations"] == []
+    assert tools.calls == [("list_files", {}), ("read_file", {"path": "pyproject.toml"})]
+
+
+def test_missing_groq_checkpoint_returns_feedback_without_executing_tool():
+    client = SequenceClient([turn("list_files", {}, 1)])
+    client.provider = "groq"
+    tools = MemoryTools()
+    with pytest.raises(AgentError, match="Maximum agent steps"):
+        run_audit(URL, tools, client, max_steps=1)
+    assert tools.calls == []
+
+
+def test_checkpoint_schemas_do_not_mutate_the_required_inspection_tools():
+    original = json.dumps(TOOL_SCHEMAS, sort_keys=True)
+    schema = checkpoint_schema(TOOL_SCHEMAS[0])
+    assert "audit_notes" in schema["parameters"]["required"]
+    assert schema["parameters"]["additionalProperties"] is False
+    assert json.dumps(TOOL_SCHEMAS, sort_keys=True) == original
+
+
+def test_checkpoint_preserves_a_finding_after_original_source_leaves_context(tmp_path):
+    class LargeTools(MemoryTools):
+        def dispatch(self, name, arguments):
+            result = super().dispatch(name, arguments)
+            if name == "read_file":
+                result["lines"] = [{"line": 2, "text": "continue-on-error: true " + "x" * 9000}]
+            return result
+
+    finding = {
+        "rule_id": "CI-001",
+        "category": "ci",
+        "severity": "medium",
+        "file": ".github/workflows/ci.yml",
+        "line": 2,
+        "description": "Test gate allows failure",
+        "evidence": "continue-on-error: true",
+        "recommendation": "Remove continue-on-error from the test gate.",
+    }
+    client = SequenceClient(
+        [
+            turn("list_files", {"audit_notes": "Starting inspection"}, 1),
+            turn(
+                "read_file",
+                {"path": ".github/workflows/ci.yml", "audit_notes": "Inventory checked."},
+                2,
+            ),
+            turn(
+                "read_file",
+                {
+                    "path": "pyproject.toml",
+                    "audit_notes": (
+                        "Candidate CI-001: .github/workflows/ci.yml:2 says continue-on-error: true. "
+                        "Confirm package configuration, then report this nonblocking gate."
+                    ),
+                },
+                3,
+            ),
+            turn("submit_report", {"repository": URL, "violations": [finding]}, 4),
+        ]
+    )
+    client.provider, client.context_budget = "groq", 24000
+    path = tmp_path / "trace.jsonl"
+    with Trace(path) as trace:
+        report = run_audit(URL, LargeTools(), client, max_steps=5, trace=trace)
+    assert report["violations"] == [finding]
+    memory = next(
+        item["content"]
+        for item in client.messages[-1]
+        if item.get("role") == "user" and str(item.get("content", "")).startswith("[AUDIT_MEMORY]")
+    )
+    assert "continue-on-error: true" in memory
+    assert ".github/workflows/ci.yml:2" in memory
+    assert "context_compaction" in path.read_text()

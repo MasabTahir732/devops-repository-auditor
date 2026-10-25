@@ -31,6 +31,9 @@ For constrained providers, old conversation text may be replaced by an explicit 
 notice with your notebook and observed-file metadata. Re-read source you need to confirm;
 an observed line range is not proof that all intervening lines were returned. Notes are
 provisional and never automatically become findings. Request reads in pages of at most 100 lines.
+When an inspection tool requires audit_notes, include your current concise notebook in that
+field on every call. Carry forward candidate findings with file/line/evidence and remaining
+checks so observations survive context compaction. Use "Starting inspection" on the first call.
 Use git_log where history adds relevant context; it is shallow, not a full secret-history scan.
 After discovering project type, cover each applicable area below before finishing. You choose
 the order and tools; this is investigation guidance, not a fixed finding checklist.
