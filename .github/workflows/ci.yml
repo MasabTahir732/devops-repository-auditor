@@ -42,3 +42,5 @@ jobs:
         run: python -m pytest -q
       - name: Validate source and wheel packaging
         run: python -m build --no-isolation
+      - name: Validate saved submission artifacts
+        run: python scripts/verify_submission.py
