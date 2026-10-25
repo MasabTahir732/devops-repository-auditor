@@ -124,6 +124,14 @@ The checker returns a nonzero result when the required sample is missing. It als
 
 ## Errors to resolve
 
+Free-tier audits can pause while bounded SDK retries wait for request/token quota
+to reset. The Groq adapter reduces its requested output allowance on HTTP 413,
+down to a bounded minimum. The agent also keeps a persistent model-written notebook
+and a bounded recent conversation, with explicit notices when older source text
+leaves model context. It retains full structured tool results in the trace and can
+read exact evidence again. A result that still cannot fit fails explicitly; it is
+never replaced by an invented clean report. Read pages contain at most 100 lines.
+
 | Error | Action |
 |---|---|
 | Missing key | Check that `LLM_PROVIDER` matches the key variable you filled in |

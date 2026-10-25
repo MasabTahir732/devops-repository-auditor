@@ -16,6 +16,7 @@ from safety import redact, redact_text
 
 MAX_FILE_BYTES = 512 * 1024
 MAX_LINE_CHARACTERS = 2000
+MAX_READ_PAGE_LINES = 100
 MAX_INVENTORY_FILES = 100_000
 MAX_SEARCH_BYTES = 8 * 1024 * 1024
 MAX_SEARCH_FILES = 2000
@@ -269,7 +270,7 @@ class InspectionTools:
         # An empty file is still inspected evidence: file-wide findings may
         # cite it with line=null, while no invented positive line is allowed.
         self.observed_lines.setdefault(path, set())
-        stop = min(end_line, len(lines))
+        stop = min(end_line, len(lines), start_line + MAX_READ_PAGE_LINES - 1)
         result = [
             self._line(path, index + 1, lines[index]) for index in range(start_line - 1, stop)
         ]
@@ -482,7 +483,7 @@ TOOL_SCHEMAS = [
     ),
     _schema(
         "read_file",
-        "Read UTF-8 tracked HEAD file contents with original line numbers and redacted secrets. Request at most 500 lines; follow next_start_line when necessary.",
+        "Read UTF-8 tracked HEAD contents with original line numbers and redacted secrets. Request a range of at most 500 lines; results paginate at 100 lines. Follow next_start_line when necessary.",
         {
             "path": {
                 "type": "string",

@@ -259,6 +259,24 @@ def test_snapshot_history_stays_pinned_after_new_local_commit(repo):
     assert tool.git_log()["commits"][0]["hash"] == original
 
 
+def test_long_reads_use_honest_small_pages_for_provider_budgets(repo):
+    (repo / "paged.txt").write_text(
+        "\n".join(f"source {i}" for i in range(1, 181)), encoding="utf-8"
+    )
+    git(repo, "add", "--all")
+    git(repo, "commit", "-m", "Add paginated source fixture")
+    tool = InspectionTools(repo)
+    first = tool.read_file("paged.txt", 6, 400)
+    assert len(first["lines"]) == 100
+    assert first["lines"][-1]["line"] == 105
+    assert first["next_start_line"] == 106
+    assert first["truncated"]
+    assert tool.observed_lines["paged.txt"] == set(range(6, 106))
+    rest = tool.read_file("paged.txt", 106, 400)
+    assert rest["lines"][-1]["line"] == 180
+    assert rest["next_start_line"] is None
+
+
 def test_read_empty_file_records_file_observation_without_inventing_lines(repo):
     (repo / "empty.md").write_text("")
     git(repo, "add", "empty.md")

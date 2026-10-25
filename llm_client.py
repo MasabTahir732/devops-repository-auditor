@@ -107,6 +107,7 @@ class CompatibleClient:
         )
         self.provider = provider
         self.model = model
+        self.context_budget = 24000 if provider == "groq" else None
 
     @staticmethod
     def chat_messages(messages: list[dict]) -> list[dict]:

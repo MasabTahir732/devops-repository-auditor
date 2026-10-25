@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from agent_loop import AgentError, model_tool_output, run_audit
+from agent_loop import AgentError, compact_messages, model_tool_output, run_audit
 from llm_client import ModelTurn, ToolCall
 from tracing import Trace
 
@@ -144,3 +144,55 @@ def test_budget_exhaustion_is_not_an_empty_success_report():
     client = SequenceClient([turn("list_files", {}, i) for i in range(1, 3)])
     with pytest.raises(AgentError, match="Maximum agent steps"):
         run_audit(URL, MemoryTools(), client, max_steps=2)
+
+
+def test_context_compaction_keeps_complete_recent_exchanges_and_explicit_notebook():
+    tools = MemoryTools()
+    tools.listed_files.update(tools.files)
+    tools.observed_lines = {"pyproject.toml": {1, 2, 3}}
+    messages = [
+        {"role": "system", "content": "Trusted policy"},
+        {"role": "user", "content": "Audit repository"},
+    ]
+    for number in range(5):
+        messages.extend(
+            [
+                {"role": "assistant", "content": None, "tool_calls": [{"id": str(number)}]},
+                {"type": "function_call_output", "call_id": str(number), "output": "x" * 1200},
+            ]
+        )
+    compact = compact_messages(
+        messages, tools, "A finding at pyproject.toml:2 remains provisional.", 4500
+    )
+    assert compact[:2] == messages[:2]
+    assert len(json.dumps(compact)) <= 4500
+    assert "[AUDIT_MEMORY]" in compact[2]["content"]
+    assert "pyproject.toml:2" in compact[2]["content"]
+    assert "removed" in compact[2]["content"]
+    assert compact[-1]["call_id"] == "4"
+    assert compact[-2]["tool_calls"][0]["id"] == "4"
+    assert len(compact) < len(messages)
+
+
+def test_save_notes_is_persistent_data_and_does_not_submit_a_report(tmp_path):
+    notes = "Observed pyproject.toml:1; confirm test configuration next."
+    client = SequenceClient(
+        [
+            turn("list_files", {}, 1),
+            turn("save_notes", {"notes": notes}, 2),
+            turn("read_file", {"path": "pyproject.toml"}, 3),
+            turn("submit_report", {"repository": URL, "violations": []}, 4),
+        ]
+    )
+    assert run_audit(URL, MemoryTools(), client, max_steps=5)["violations"] == []
+    assert tool_result(client.messages[2])["notes"] == notes
+
+
+def test_unfit_recent_observation_fails_explicitly_instead_of_dropping_it():
+    messages = [
+        {"role": "system", "content": "Policy"},
+        {"role": "user", "content": "Task"},
+        {"role": "assistant", "content": "x" * 10000},
+    ]
+    with pytest.raises(AgentError, match="latest observation"):
+        compact_messages(messages, MemoryTools(), "", 2000)

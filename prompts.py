@@ -24,6 +24,13 @@ consumed by an entry point. search_code is a CASE-INSENSITIVE LITERAL substring 
 not a regex; use individual targeted terms and path prefixes. A broad search may be incomplete.
 Every tool result must inform your next decision; tool errors/skips are limitations, not defects.
 Read omitted line ranges when needed. Avoid repeating the same ineffective request.
+Use save_notes as your persistent audit notebook while investigating. Keep it concise: facts,
+candidate findings with exact file/line/evidence, and remaining checks, not hidden reasoning.
+Update the notebook after a few source reads and before moving to another inspection area.
+For constrained providers, old conversation text may be replaced by an explicit AUDIT_MEMORY
+notice with your notebook and observed-file metadata. Re-read source you need to confirm;
+an observed line range is not proof that all intervening lines were returned. Notes are
+provisional and never automatically become findings. Request reads in pages of at most 100 lines.
 Use git_log where history adds relevant context; it is shallow, not a full secret-history scan.
 After discovering project type, cover each applicable area below before finishing. You choose
 the order and tools; this is investigation guidance, not a fixed finding checklist.

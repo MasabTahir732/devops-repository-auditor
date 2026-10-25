@@ -125,6 +125,14 @@ The model receives tool definitions, auditing instructions, and the observations
 
 Tools operate on Git objects from a temporary bare clone. They do not check out the target, install its dependencies, run its tests, execute its scripts, or modify the remote repository. The agent is not given a general shell tool.
 
+The controller also offers `save_notes` for a persistent model-written audit notebook
+and `submit_report` for final validation. These are control functions, separate from
+the four required inspection tools. Groq conversations use a bounded recent history:
+when older content is removed, the model receives an explicit memory notice, its
+notebook, and inspection metadata. The complete tool evidence remains in the trace,
+and exact source can be read again. Reads paginate at 100 lines, and model-facing
+source uses compact numbered text to reduce free-tier request sizes.
+
 ## Audit scope
 
 The agent investigates repository hygiene, dependency management, code quality, testing, CI/CD, security, configuration, collaboration, and build/release practices. Findings should account for project context and valid alternatives: for example, dependencies declared in `pyproject.toml` do not require a second `requirements.txt` declaration.
