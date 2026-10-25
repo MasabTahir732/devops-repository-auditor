@@ -169,6 +169,66 @@ def test_groq_oversized_request_retries_are_bounded():
     assert len(requests) == 3
 
 
+def test_groq_invalid_tool_generation_gets_bounded_repair_feedback():
+    requests = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        if len(requests) == 1:
+            return httpx.Response(
+                400,
+                json={
+                    "error": {
+                        "code": "tool_use_failed",
+                        "message": "Invalid tool call generated",
+                        "failed_generation": "private-provider-debug",
+                    }
+                },
+            )
+        return httpx.Response(200, json=chat_response())
+
+    client = mock_client(
+        CompatibleClient("wire-test-key-1234", "test-model", "groq"),
+        handler,
+        CompatibleClient.ENDPOINTS["groq"],
+    )
+    messages = [{"role": "user", "content": "Inspect"}]
+    result = client.respond(messages, [SCHEMA])
+    assert result.calls[0].name == "list_files"
+    assert result.usage["tool_generation_retries"] == 1
+    assert len(requests) == 2
+    assert "valid JSON" in requests[1]["messages"][-1]["content"]
+    assert "private-provider-debug" not in json.dumps(requests)
+    assert messages == [{"role": "user", "content": "Inspect"}]
+
+
+@pytest.mark.parametrize("tool_failure,attempts", [(True, 3), (False, 1)])
+def test_only_repairable_tool_errors_are_retried(tool_failure, attempts):
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(
+            400,
+            json={
+                "error": {
+                    "code": ("tool_use_failed" if tool_failure else "invalid_model"),
+                    "message": "Request rejected",
+                }
+            },
+        )
+
+    client = mock_client(
+        CompatibleClient("wire-test-key-1234", "test-model", "groq"),
+        handler,
+        CompatibleClient.ENDPOINTS["groq"],
+    )
+    with pytest.raises(LLMError, match="HTTP 400"):
+        client.respond([], [SCHEMA])
+    assert len(requests) == attempts
+
+
 def test_openai_responses_wire_format_keeps_full_output_items():
     captured = []
 

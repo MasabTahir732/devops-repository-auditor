@@ -11,6 +11,17 @@ class LLMError(RuntimeError):
     pass
 
 
+def _failed_tool_generation(error) -> bool:
+    body = error.body
+    if isinstance(body, list) and body:
+        body = body[0]
+    if isinstance(body, dict):
+        body = body.get("error", body)
+    return isinstance(body, dict) and (
+        body.get("code") == "tool_use_failed" or "failed_generation" in body
+    )
+
+
 @dataclass
 class ToolCall:
     name: str
@@ -138,11 +149,13 @@ class CompatibleClient:
         ]
         try:
             output_budget = 4096 if self.provider == "groq" else 8192
+            generation_retries = 0
+            request_messages = self.chat_messages(messages)
             while True:
                 try:
                     response = self._client.chat.completions.create(
                         model=self.model,
-                        messages=self.chat_messages(messages),
+                        messages=request_messages,
                         tools=chat_tools,
                         tool_choice="auto",
                         parallel_tool_calls=False,
@@ -155,6 +168,25 @@ class CompatibleClient:
                     # evidence or tool schemas. At most two additional attempts.
                     if self.provider == "groq" and exc.status_code == 413 and output_budget > 1024:
                         output_budget //= 2
+                        continue
+                    if (
+                        self.provider == "groq"
+                        and exc.status_code == 400
+                        and _failed_tool_generation(exc)
+                        and generation_retries < 2
+                    ):
+                        generation_retries += 1
+                        request_messages = [
+                            *request_messages,
+                            {
+                                "role": "user",
+                                "content": (
+                                    "The provider could not parse your last tool call. Return one valid "
+                                    "function call using an exact provided name and all required parameters. "
+                                    "Arguments must be valid JSON. Continue the same investigation."
+                                ),
+                            },
+                        ]
                         continue
                     raise
         except api.AuthenticationError as exc:
@@ -200,6 +232,7 @@ class CompatibleClient:
             ToolCall(call.function.name, call.function.arguments, call.id) for call in tool_calls
         ]
         usage = response.usage.model_dump(mode="json") if response.usage else {}
+        usage.update(tool_generation_retries=generation_retries, output_allowance=output_budget)
         return ModelTurn([assistant], calls, message.content or "", usage)
 
 
