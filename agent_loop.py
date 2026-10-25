@@ -199,7 +199,21 @@ def run_audit(
             raise AgentError(
                 "Inspection context limit reached; narrow the audit or inspect a smaller repository."
             )
-        turn = client.respond(messages, schemas)
+        finalizing = max_steps >= 6 and step >= max_steps - 1
+        request_schemas = [REPORT_TOOL] if finalizing else schemas
+        if finalizing:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "The inspection budget has ended. Use submit_report now with supported findings "
+                        "from the observed source and your evidence notebook. Do not make claims about "
+                        "uninspected areas or invent defects. If validation rejects a finding, correct "
+                        "or remove that unsupported claim and submit again."
+                    ),
+                }
+            )
+        turn = client.respond(messages, request_schemas)
         messages.extend(turn.items)
         trace.write(
             "model_turn",
@@ -223,6 +237,19 @@ def run_audit(
             raise AgentError("Tool-call budget exhausted before a validated report was submitted.")
         for call in turn.calls:
             tool_count += 1
+            if finalizing and call.name != "submit_report":
+                result = {"ok": False, "error": "Inspection budget ended. Use submit_report."}
+                trace.write(
+                    "tool_result", step=step, call_id=call.call_id, tool=call.name, result=result
+                )
+                messages.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": call.call_id,
+                        "output": model_tool_output(result),
+                    }
+                )
+                continue
             try:
                 arguments = json.loads(call.arguments, parse_constant=_reject_constant)
                 if not isinstance(arguments, dict):

@@ -290,3 +290,42 @@ def test_checkpoint_preserves_a_finding_after_original_source_leaves_context(tmp
     assert "continue-on-error: true" in memory
     assert ".github/workflows/ci.yml:2" in memory
     assert "context_compaction" in path.read_text()
+
+
+def test_budget_reserves_final_turns_for_a_validated_report():
+    class BudgetClient(SequenceClient):
+        def respond(self, messages, tools):
+            if len(self.messages) == 4:
+                assert [tool["name"] for tool in tools] == ["submit_report"]
+                assert "inspection budget has ended" in messages[-1]["content"]
+            return super().respond(messages, tools)
+
+    client = BudgetClient(
+        [
+            turn("list_files", {}, 1),
+            turn("read_file", {"path": "pyproject.toml"}, 2),
+            turn(
+                "save_notes", {"notes": "Read package configuration; no supported findings yet."}, 3
+            ),
+            turn("read_file", {"path": ".github/workflows/ci.yml"}, 4),
+            turn("submit_report", {"repository": URL, "violations": []}, 5),
+        ]
+    )
+    assert run_audit(URL, MemoryTools(), client, max_steps=6)["violations"] == []
+
+
+def test_inspection_request_after_budget_gets_feedback_without_execution():
+    client = SequenceClient(
+        [
+            turn("list_files", {}, 1),
+            turn("read_file", {"path": "pyproject.toml"}, 2),
+            turn("save_notes", {"notes": "Configuration inspected."}, 3),
+            turn("save_notes", {"notes": "Ready to report."}, 4),
+            turn("read_file", {"path": ".github/workflows/ci.yml"}, 5),
+            turn("submit_report", {"repository": URL, "violations": []}, 6),
+        ]
+    )
+    tools = MemoryTools()
+    assert run_audit(URL, tools, client, max_steps=6)["violations"] == []
+    assert tools.calls == [("list_files", {}), ("read_file", {"path": "pyproject.toml"})]
+    assert tool_result(client.messages[-1])["ok"] is False
