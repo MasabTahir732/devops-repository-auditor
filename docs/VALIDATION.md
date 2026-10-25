@@ -6,7 +6,7 @@ The exact installed versions are recorded in the runtime and development lock fi
 | Check | Observed result |
 |---|---|
 | Initial `python -m pytest -q` | **182 passed** in 47.23 seconds on 24 October |
-| Latest full `python -m pytest -q` | **198 passed** in 59.40 seconds on 25 October |
+| Latest full `python -m pytest -q` | **204 passed** in 59.32 seconds on 25 October |
 | `python -m ruff check .` | Passed |
 | `python -m ruff format --check .` | Passed after formatting the final regression tests |
 | Final redaction regression subset | 20 passed after that formatting change |
@@ -19,7 +19,7 @@ The exact installed versions are recorded in the runtime and development lock fi
 | Temporary clone cleanup | Confirmed removed after inspection |
 | `.env` ignore rule | `git check-ignore .env` returned `.env` |
 | Public project publication | Six component commits pushed to `MasabTahir732/devops-repository-auditor` |
-| Hosted CI | All four Linux/Windows and Python 3.11/3.14 jobs passed for implementation commit `845ab1f`; [run 40117376441](https://github.com/MasabTahir732/devops-repository-auditor/actions/runs/40117376441) |
+| Hosted CI | All four Linux/Windows and Python 3.11/3.14 jobs passed for finalization fix `8159452`; [run 40184062350](https://github.com/MasabTahir732/devops-repository-auditor/actions/runs/40184062350) |
 
 Tests cover real local Git objects, symlink/submodule exclusion, empty repositories,
 timeouts, pagination, search limits, snapshot consistency, malformed requests,

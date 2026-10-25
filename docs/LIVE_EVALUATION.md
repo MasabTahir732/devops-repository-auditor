@@ -46,6 +46,30 @@ documented Groq tool-generation failures. The full structured evidence remains i
 the trace. Offline regressions cover these behaviors, but the larger repository
 has not yet been successfully re-evaluated with every final fix.
 
+## Quiz-generator attempts
+
+The requested application repository was
+`MasabTahir732/AI-Intelligent-Reading-Comprehension-and-Quiz-Generator`.
+A 20-turn `openai/gpt-oss-20b` run inspected source but exhausted its budget:
+the model kept choosing inspection tools during finalization. The controller
+blocked those calls; no completed report was written. A subsequent 12-turn run
+with a provider-enforced named report tool reached finalization but received
+HTTP 400. Its trace is retained locally as
+`reports/quiz-generator-retry.trace.jsonl`. Neither attempt is a successful audit.
+
+An alternative `llama-3.3-70b-versatile` request returned HTTP 404. The account's
+live model list did not include that model. A subsequent run with the listed
+`openai/gpt-oss-120b` model completed four inspection turns, then stopped at a
+rate/quota error. Its trace is retained locally as
+`reports/quiz-generator-120b.trace.jsonl`. No quiz-generator report was produced,
+and no failed attempt replaced the authentic Hello-World submission sample.
+Further retries were stopped to avoid repeatedly consuming the account's quota.
+
+The separate [source review](QUIZ_GENERATOR_REVIEW.md) records concrete observations
+without presenting manually authored findings as model output. The provider wire
+regressions and full 204-test suite pass, but passing offline tests does not
+establish that every hosted model will complete this investigation.
+
 ## What still needs evaluation
 
 Run the controlled healthy, obvious-defect and subtle-defect cases described in

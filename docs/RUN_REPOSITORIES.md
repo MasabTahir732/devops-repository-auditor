@@ -4,6 +4,14 @@ Your existing workspace already has dependencies installed in the parent `.venv`
 The local `.env` selects Groq and the tested `openai/gpt-oss-20b` model. Keep your
 key local; you do not need another key for each repository.
 
+**Recorded result on 25 October:** the quiz-generator attempts did not complete:
+the 20B model exhausted its steps or received HTTP 400, and the 120B model reached
+a rate/quota limit. There is no completed quiz-generator JSON report yet. Keep
+the existing authentic Hello-World submission sample. See
+[live evaluation](LIVE_EVALUATION.md) and the separate
+[manual source review](QUIZ_GENERATOR_REVIEW.md). Wait for the applicable quota
+reset before another run; do not enable billing to follow these instructions.
+
 ## Audit your quiz-generator repository
 
 Open PowerShell and run:
