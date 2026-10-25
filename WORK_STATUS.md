@@ -1,6 +1,6 @@
 # Work status
 
-Last updated: 2026-10-24 (Asia/Karachi).
+Last updated: 2026-10-25 (Asia/Karachi).
 
 ## Implemented
 
@@ -13,7 +13,7 @@ Last updated: 2026-10-24 (Asia/Karachi).
 
 ## Verified locally
 
-- [x] Full suite: 182 tests passed; Ruff lint and formatting passed.
+- [x] Latest full suite: 198 tests passed; Ruff lint and formatting passed.
 - [x] Source/wheel builds and wheel installation into a clean target passed.
 - [x] Provider-wire tests and CLI failure/recovery tests passed without real API calls.
 - [x] GitHub Actions CI configured; exact runtime/development dependency resolutions recorded.
@@ -22,8 +22,9 @@ Last updated: 2026-10-24 (Asia/Karachi).
 
 ## Needs the user's account or review
 
-- [ ] Create/select a Gemini, Groq, or OpenAI API key and save it in local `.env`.
-- [ ] Complete a real LLM audit to generate authentic `sample_report.json` and trace.
+- [x] Configure Groq locally and pass a real API/tool-call check without displaying credentials.
+- [x] Complete a real Groq audit of `octocat/Hello-World`, producing authentic `sample_report.json` and `sample_trace.jsonl`.
+- [x] Review the smoke sample's applicability; zero findings is appropriate for this content-only repository.
 - [ ] Review findings and measure model precision/recall on healthy and defective examples.
 - [x] Create the public submission repository: https://github.com/MasabTahir732/devops-repository-auditor.
 - [x] Push the six component commits to `origin/main`.
@@ -38,5 +39,6 @@ and [publishing commands](docs/PUBLISHING.md). The implementation is grouped int
 focused commits with actual timestamps on `main` and published under `MasabTahir732`.
 [Hosted CI run 40117376441](https://github.com/MasabTahir732/devops-repository-auditor/actions/runs/40117376441)
 passed all four jobs for implementation commit `845ab1f`. The local `.env`
-configuration is ignored by Git. The authentic sample report and course submission
-remain outstanding.
+configuration is ignored by Git. The authentic report is a small functional smoke
+sample, not a hidden-test benchmark. Broader detection evaluation and course submission
+remain outstanding. See [the live evaluation notes](docs/LIVE_EVALUATION.md).

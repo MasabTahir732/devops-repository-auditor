@@ -17,6 +17,11 @@ The LLM API lets the model choose tools and interpret their results. Public repo
 
 Offline tests use temporary Git repositories and scripted model responses. Passing those tests verifies application behavior; it does not demonstrate the accuracy of a real model audit. Generate the required `sample_report.json` with a real run before submitting. A sample report is deliberately not invented or copied from mocked tests.
 
+This repository now includes an authentic small live sample and trace from Groq.
+See [live evaluation notes](docs/LIVE_EVALUATION.md) for its limited scope and the
+remaining larger-repository detection work. A successful smoke sample is not a
+hidden-test accuracy measurement.
+
 ## Setup on Windows PowerShell
 
 Run these commands from the project folder:

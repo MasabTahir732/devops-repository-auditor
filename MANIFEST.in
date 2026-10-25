@@ -1,4 +1,5 @@
 include requirements*.txt .env.example .gitignore .gitattributes WORK_STATUS.md
+include sample_report.json sample_trace.jsonl
 recursive-include docs *.md
 recursive-include scripts *.py
 graft tests

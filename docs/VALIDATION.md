@@ -5,7 +5,8 @@ The exact installed versions are recorded in the runtime and development lock fi
 
 | Check | Observed result |
 |---|---|
-| `python -m pytest -q` | **182 passed** in 47.23 seconds |
+| Initial `python -m pytest -q` | **182 passed** in 47.23 seconds on 24 October |
+| Latest full `python -m pytest -q` | **198 passed** in 59.40 seconds on 25 October |
 | `python -m ruff check .` | Passed |
 | `python -m ruff format --check .` | Passed after formatting the final regression tests |
 | Final redaction regression subset | 20 passed after that formatting change |
@@ -28,14 +29,21 @@ serialization and errors for Gemini, Groq and OpenAI. They make no network model
 
 ## Expected incomplete checks
 
-The local setup checker reports a missing `GEMINI_API_KEY` because no personal API
-credential is configured. The submission checker reports one required missing file:
-`sample_report.json`. Both return a useful nonzero result rather than inventing output.
+The initial checks on 24 October reported a missing API key. On 25 October, a local
+Gemini key was configured and model-list access succeeded without exposing the key.
+Actual generation requests returned HTTP 403 with Google's message:
+"Your project has been denied access. Please contact support."
+Model listing does not prove inference eligibility, as described in the
+[Gemini troubleshooting guide](https://ai.google.dev/gemini-api/docs/troubleshooting).
+Gemini project access remains restricted. Groq was subsequently configured and
+passed a real API/tool-call check. A real three-turn Groq audit of the small
+`octocat/Hello-World` repository completed and produced the authentic submission
+sample and trace. See [LIVE_EVALUATION.md](LIVE_EVALUATION.md) for scope, earlier
+failed attempts, the false-positive review, and remaining accuracy work.
 
 These remain unverified:
 
-- Authentication, quota, model access and an actual model/tool audit using the user's API account.
-- The required authentic sample report and companion tool trace.
+- Completion and accuracy on larger repositories under the selected free-tier limits.
 - Detection precision and recall from real model outputs, including false positives on healthy repositories.
 - Course submission of the public GitHub URL.
 
