@@ -157,9 +157,17 @@ class CompatibleClient:
                         model=self.model,
                         messages=request_messages,
                         tools=chat_tools,
-                        tool_choice="auto",
+                        tool_choice="required"
+                        if len(tools) == 1 and tools[0]["name"] == "submit_report"
+                        else "auto",
                         parallel_tool_calls=False,
                         max_tokens=output_budget,
+                        # Groq can reject unknown generated tool names before our
+                        # controller gets to return corrective feedback. Keep
+                        # execution/schema validation in our Python allowlist.
+                        extra_body={"disable_tool_validation": True}
+                        if self.provider == "groq"
+                        else {},
                     )
                     break
                 except api.APIStatusError as exc:

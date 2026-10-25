@@ -101,6 +101,7 @@ def test_compatible_wire_format_preserves_tool_signatures_and_results(provider, 
     assert signature == "opaque-test-signature"
     assert body["tools"][0]["function"]["name"] == "list_files"
     assert "strict" not in body["tools"][0]["function"]
+    assert body.get("disable_tool_validation", False) is (provider == "groq")
 
 
 @pytest.mark.parametrize(
