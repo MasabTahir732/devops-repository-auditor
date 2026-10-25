@@ -1,5 +1,8 @@
 # DevOps Repository Auditing Agent
 
+For step-by-step commands to test a repository and inspect its JSON result, see
+[Run repositories](docs/RUN_REPOSITORIES.md).
+
 [![Validate auditor](https://github.com/MasabTahir732/devops-repository-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/MasabTahir732/devops-repository-auditor/actions/workflows/ci.yml)
 
 Current implementation and remaining account steps: [work status](WORK_STATUS.md).
