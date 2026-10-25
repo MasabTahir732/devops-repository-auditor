@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 
@@ -121,3 +122,10 @@ def test_yaml_block_credentials_hidden_without_changing_line_numbers():
     assert "another-sensitive-line" not in result
     assert result.count("\n") == value.count("\n")
     assert "  debug: false" in result
+
+
+def test_long_benign_tokens_redact_without_pathological_backtracking():
+    source = "payload = " + "x" * 50000
+    start = time.perf_counter()
+    assert redact_text(source) == source
+    assert time.perf_counter() - start < 2.0

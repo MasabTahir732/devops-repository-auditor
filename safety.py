@@ -26,7 +26,7 @@ _USAGE_COUNTS = {
 }
 _NAME = r"(?:[\w.-]*(?:api[_-]?key|secret|password|passwd|token|credential|private[_-]?key)[\w.-]*)"
 _ASSIGNMENT = re.compile(
-    rf"(?im)(?P<prefix>[\"']?{_NAME}[\"']?\s*[:=]\s*)"
+    rf"(?im)(?<![\w.-])(?P<prefix>[\"']?{_NAME}[\"']?\s*[:=]\s*)"
     r"(?P<value>\"(?:\\.|[^\"\\\r\n])*\"|'(?:\\.|[^'\\\r\n])*'|[^\s,;#}\]\r\n]+)"
 )
 _ENV_DEFAULT = re.compile(
