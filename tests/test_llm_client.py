@@ -104,6 +104,24 @@ def test_compatible_wire_format_preserves_tool_signatures_and_results(provider, 
     assert body.get("disable_tool_validation", False) is (provider == "groq")
 
 
+@pytest.mark.parametrize("provider", ["groq", "gemini"])
+def test_final_report_request_forces_named_tool_with_provider_validation(provider):
+    captured = []
+
+    def handler(request):
+        captured.append(json.loads(request.content))
+        return httpx.Response(200, json=chat_response())
+
+    client = mock_client(
+        CompatibleClient("wire-test-key-1234", "test-model", provider),
+        handler,
+        CompatibleClient.ENDPOINTS[provider],
+    )
+    client.respond([], [{**SCHEMA, "name": "submit_report"}])
+    assert captured[0]["tool_choice"] == {"type": "function", "function": {"name": "submit_report"}}
+    assert not captured[0].get("disable_tool_validation", False)
+
+
 @pytest.mark.parametrize(
     "status,expected", [(401, "authentication"), (429, "quota"), (400, "HTTP 400")]
 )

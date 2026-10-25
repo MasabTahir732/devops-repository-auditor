@@ -149,6 +149,7 @@ class CompatibleClient:
         ]
         try:
             output_budget = 4096 if self.provider == "groq" else 8192
+            finalizing = len(tools) == 1 and tools[0]["name"] == "submit_report"
             generation_retries = 0
             request_messages = self.chat_messages(messages)
             while True:
@@ -157,15 +158,15 @@ class CompatibleClient:
                         model=self.model,
                         messages=request_messages,
                         tools=chat_tools,
-                        tool_choice="required"
-                        if len(tools) == 1 and tools[0]["name"] == "submit_report"
+                        tool_choice={"type": "function", "function": {"name": "submit_report"}}
+                        if finalizing
                         else "auto",
                         parallel_tool_calls=False,
                         max_tokens=output_budget,
                         # Groq can reject unknown generated tool names before our
                         # controller gets to return corrective feedback. Keep
                         # execution/schema validation in our Python allowlist.
-                        extra_body={"disable_tool_validation": True}
+                        extra_body={"disable_tool_validation": not finalizing}
                         if self.provider == "groq"
                         else {},
                     )
