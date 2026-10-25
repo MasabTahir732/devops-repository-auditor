@@ -44,6 +44,7 @@ _PATTERNS = [
     ),
     re.compile(
         r"\b(?:sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{16,}|"
+        r"gsk_[A-Za-z0-9_-]{16,}|AQ\.[A-Za-z0-9_-]{24,}|"
         r"gh[pousr]_[A-Za-z0-9_]{16,}|github_pat_[A-Za-z0-9_]{16,}|"
         r"AKIA[A-Z0-9]{16}|ASIA[A-Z0-9]{16}|AIza[A-Za-z0-9_-]{30,}|"
         r"xox[baprs]-[A-Za-z0-9-]{10,})\b"

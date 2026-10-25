@@ -18,6 +18,8 @@ from safety import REDACTED, redact, redact_text, register_secret
         ("https://user:private-pass@host.test/path", "private-pass"),
         ("https://host.test/path?token=confidentialvalue", "confidentialvalue"),
         ("ghp_" + "A" * 36, "ghp_" + "A" * 36),
+        ("gsk_" + "A" * 40, "gsk_" + "A" * 40),
+        ("AQ." + "A" * 40, "AQ." + "A" * 40),
     ],
 )
 def test_redaction_of_common_formats(source, hidden):
